@@ -1,0 +1,73 @@
+services:
+  schedule:
+    build: .
+    command: uvicorn services.schedule.main:app --host 0.0.0.0 --port 8001
+    ports:
+      - "8001:8001"
+
+  appointment:
+    build: .
+    command: uvicorn services.appointment.main:app --host 0.0.0.0 --port 8002
+    ports:
+      - "8002:8002"
+    environment:
+      MEDIFLOW_DB_PATH: /app/data/mediflow.db
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+
+
+  payment:
+    build: .
+    command: uvicorn services.payment.main:app --host 0.0.0.0 --port 8003
+    ports:
+      - "8003:8003"
+    environment:
+      RABBITMQ_URL: amqp://mediflow:mediflow@rabbitmq:5672/%2F
+      APPOINTMENT_URL: http://appointment:8002
+
+
+
+  notification:
+    build: .
+    command: python -m services.notification.consumer
+    environment:
+      RABBITMQ_URL: amqp://mediflow:mediflow@rabbitmq:5672/%2F
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - rabbitmq
+      - redis
+
+
+
+
+  gateway:
+    build: .
+    command: uvicorn services.gateway.main:app --host 0.0.0.0 --port 8080
+    ports:
+      - "8080:8080"
+    environment:
+      SCHEDULE_URL: http://schedule:8001
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports:
+      - "5672:5672"
+      -  "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: mediflow
+      RABBITMQ_DEFAULT_PASS: mediflow
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+volumes:
+    redis-data:
+    rabbitmq-data:

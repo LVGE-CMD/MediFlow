@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.tools/
+allure-results/
+allure-report/
+data/
+*.db
+*.db.*
+*.log
+*.err
+*_state.txt
+wsl_decoded.txt
+*.ps1
+DockerDesktopInstaller.exe
